@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.9 Pro (MQTT Realtime)</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v4.0 Pro (Notifiche Tavolo Occupato)</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -966,6 +966,13 @@
                     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.12);
+                } else if (type === 'table_occupied') {
+                    // Doppio beep di avviso distinti per l'occupazione del tavolo
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
                 }
             } catch (e) { }
         }
@@ -1155,11 +1162,24 @@
         }
 
         function salvaStatoTavolo() {
+            // Verifica se il tavolo era precedentemente vuoto (nessun articolo salvato)
+            var ordinePrecedente = JSON.parse(localStorage.getItem('ordine_tavolo_' + tavoloAttivo)) || [];
+            var eraVuoto = (ordinePrecedente.length === 0);
+            var diventaOccupato = (ordineCorrente.length > 0);
+
             localStorage.setItem('ordine_tavolo_' + tavoloAttivo, JSON.stringify(ordineCorrente));
             localStorage.setItem('coperti_tavolo_' + tavoloAttivo, coperti);
             localStorage.setItem('prezzo_coperto_tavolo_' + tavoloAttivo, prezzoCoperto);
             localStorage.setItem('sconto_tavolo_' + tavoloAttivo, scontoValore);
             forzaSincronizzazioneIniziale();
+
+            // Se il tavolo è appena stato occupato, attiva notifica sonora e visiva
+            if (eraVuoto && diventaOccupato) {
+                playBeep('table_occupied');
+                var tavoli = getTavoli();
+                var tavObj = tavoli.find(function(t) { return String(t.id) === String(tavoloAttivo); }) || { nome: 'Tavolo ' + tavoloAttivo };
+                showToast("🛎️ Tavolo " + tavObj.nome + " ora OCCUPATO!", "warning");
+            }
 
             if (window.cloudSalvaDati) {
                 let tavoliStato = {};
@@ -1342,7 +1362,6 @@
                 btn.appendChild(priceSpan);
 
                 btn.onclick = function() {
-                    playBeep('click');
                     var nuovoId = generateUniqueId();
                     ordineCorrente.push({
                         id: nuovoId, nome: item.nome, prezzo: item.prezzo,
@@ -1651,7 +1670,6 @@
         }
 
         function aggiungiMob(nome, prezzo, stampante) {
-            playBeep('click');
             var nuovoId = generateUniqueId();
             ordineCorrente.push({ id: nuovoId, nome: nome, prezzo: prezzo, stampante: stampante, uscita: 1, variante: "", inviato: false, qta: 1 });
             idRigaSelezionata = nuovoId;
@@ -2533,7 +2551,7 @@
             if (confirm("Eliminare questo operatore?")) {
                 var nuoviOps = ops.filter(function(o) { return String(o.id) !== String(id); });
                 salvaOperatori(nuoviOps);
-                if (String(operatoreCorrente.id) === String(id)) operatoreCorrente = nuoviOps[0];
+                if (String(operatoreCorrente.id) === String(id)) operatoreCorrente = novosOps[0];
                 forzaSincronizzazioneIniziale();
                 showToast("Operatore eliminato", 'info');
             }
