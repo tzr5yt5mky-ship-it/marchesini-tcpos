@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.9 Pro</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.8 Pro (Cloud Realtime)</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -155,50 +155,155 @@
         .action-btn.btn-incassa { background: #047857; border-color: #10b981; font-size: 0.92rem; font-weight: 900; }
         .action-btn.btn-kds { background: #15803d; border-color: #22c55e; }
 
-        /* --- PALMARE --- */
-        #view-palmare { background: var(--bg-body); padding: 0; justify-content: center; align-items: flex-start; }
+        /* --- PALMARE OTTIMIZZATO IPHONE --- */
+        #view-palmare { 
+            background: var(--bg-body); 
+            padding: 0; 
+            flex-direction: column; 
+            height: 100dvh; 
+            overflow: hidden; 
+        }
         
-        .mobile-shell { width: 100%; height: 100%; max-width: 100%; max-height: 100%; background: var(--bg-body); border: none; border-radius: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: none; }
+        .mobile-shell { 
+            width: 100%; 
+            height: 100%; 
+            max-width: 100%; 
+            max-height: 100%; 
+            background: var(--bg-body); 
+            border: none; 
+            border-radius: 0; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            box-shadow: none; 
+        }
         
         .m-header { 
             background: var(--bg-panel); 
-            padding: 12px; 
-            padding-top: max(12px, env(safe-area-inset-top));
-            padding-left: max(12px, env(safe-area-inset-left));
-            padding-right: max(12px, env(safe-area-inset-right));
+            padding: max(12px, env(safe-area-inset-top)) 16px 12px 16px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             border-bottom: 1px solid var(--border-color); 
+            flex-shrink: 0;
+            z-index: 10;
         }
-        .m-badge { background: var(--accent-blue); color: #fff; padding: 8px 14px; font-weight: 800; border-radius: 8px; cursor: pointer; font-size: 0.95rem; }
-        .m-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .m-badge { 
+            background: var(--accent-blue); 
+            color: #fff; 
+            padding: 10px 16px; 
+            font-weight: 800; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 0.98rem; 
+            letter-spacing: 0.3px;
+        }
+        .m-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
         
-        .m-cats { display: flex; gap: 8px; padding: 10px 12px; background: var(--bg-panel); overflow-x: auto; flex-shrink: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .m-cats { 
+            display: flex; 
+            gap: 10px; 
+            padding: 12px 16px; 
+            background: var(--bg-panel); 
+            overflow-x: auto; 
+            flex-shrink: 0; 
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: none; 
+            border-bottom: 1px solid var(--border-color);
+        }
         .m-cats::-webkit-scrollbar { display: none; }
-        .m-cat-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-sub); padding: 10px 18px; border-radius: 20px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 0.9rem; }
-        .m-cat-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .m-cat-btn { 
+            background: var(--bg-card); 
+            color: var(--text-main); 
+            border: 1px solid var(--border-sub); 
+            padding: 10px 20px; 
+            border-radius: 22px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            white-space: nowrap; 
+            font-size: 0.92rem; 
+            flex-shrink: 0;
+        }
+        .m-cat-btn.active { 
+            background: var(--accent-blue); 
+            color: #fff; 
+            border-color: var(--accent-blue); 
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
         
-        .m-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; overflow-y: auto; align-content: start; -webkit-overflow-scrolling: touch; }
-        .m-card { background: var(--bg-panel); border-radius: 10px; padding: 14px 10px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid var(--border-color); min-height: 85px; text-align: center; color: var(--text-main); font-size: 0.92rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .m-card:active { transform: scale(0.96); border-color: var(--accent-blue); background: var(--bg-card); }
+        .m-grid { 
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            padding: 16px; 
+            overflow-y: auto; 
+            align-content: start; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        .m-card { 
+            background: var(--bg-panel); 
+            border-radius: 12px; 
+            padding: 16px 12px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            cursor: pointer; 
+            border: 1px solid var(--border-color); 
+            min-height: 95px; 
+            text-align: center; 
+            color: var(--text-main); 
+            font-size: 0.98rem; 
+            font-weight: bold; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12); 
+        }
+        .m-card:active { transform: scale(0.95); border-color: var(--accent-blue); background: var(--bg-card); }
         
-        .m-drawer { background: var(--bg-panel); height: 35vh; min-height: 170px; overflow-y: auto; padding: 12px; border-top: 1px solid var(--border-color); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
-        .m-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 8px 0; border-bottom: 1px solid var(--border-color); align-items: center; color: var(--text-main); }
+        .m-drawer { 
+            background: var(--bg-panel); 
+            max-height: 32vh; 
+            min-height: 140px; 
+            overflow-y: auto; 
+            padding: 12px 16px; 
+            border-top: 1px solid var(--border-color); 
+            flex-shrink: 0; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        .m-row { display: flex; justify-content: space-between; font-size: 0.92rem; padding: 10px 0; border-bottom: 1px solid var(--border-color); align-items: center; color: var(--text-main); }
         
         .m-footer { 
-            background: var(--bg-body); 
-            padding: 10px; 
-            padding-bottom: max(12px, env(safe-area-inset-bottom)); 
-            padding-left: max(10px, env(safe-area-inset-left));
-            padding-right: max(10px, env(safe-area-inset-right));
+            background: var(--bg-nav); 
+            padding: 10px 12px; 
+            padding-bottom: max(16px, env(safe-area-inset-bottom)); 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             gap: 8px; 
             flex-shrink: 0; 
             border-top: 1px solid var(--border-color); 
+            z-index: 10;
         }
-        .m-btn { background: var(--accent-green); color: #fff; border: none; padding: 12px 4px; font-weight: 800; border-radius: 8px; cursor: pointer; font-size: 0.75rem; text-align: center; display: flex; align-items: center; justify-content: center; }
+        .m-btn { 
+            background: var(--accent-green); 
+            color: #fff; 
+            border: none; 
+            padding: 14px 4px; 
+            font-weight: 800; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 0.78rem; 
+            text-align: center; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .m-btn:active { transform: scale(0.95); }
 
         @media (max-width: 768px) {
             #global-nav { padding: 6px 10px; }
@@ -371,12 +476,12 @@
         </div>
     </div>
 
-    <!-- 2. PALMARE -->
+    <!-- 2. PALMARE (Ottimizzato iPhone) -->
     <div id="view-palmare" class="app-view">
         <div class="mobile-shell">
             <div class="m-header">
                 <span class="m-badge" onclick="apriModalSelezionaTavoloMob()">TAVOLO <span id="m-tav">1</span> (<span id="m-cop">2</span> cop.) ✏️</span>
-                <button onclick="forzaSincronizzazioneIniziale(); playBeep('click');" style="background:var(--accent-green); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">🔄 Sync</button>
+                <button onclick="sincronizzaConCloud(); playBeep('click');" style="background:var(--accent-green); color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🔄 Sync</button>
             </div>
             <div class="m-content">
                 <div class="m-cats" id="m-cat-bar"></div>
@@ -716,6 +821,47 @@
         </div>
     </div>
 
+    <!-- Firebase SDK Modular per la sincronizzazione in tempo reale -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "INSERISCI_TUA_API_KEY",
+            authDomain: "tuo-progetto.firebaseapp.com",
+            databaseURL: "https://tuo-progetto-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "tuo-progetto",
+            storageBucket: "tuo-progetto.appspot.com",
+            messagingSenderId: "ID",
+            appId: "ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.cloudSalvaDati = function(chiave, dati) {
+            set(ref(db, 'tcpos/' + chiave), dati).catch(err => console.error("Cloud Error:", err));
+        };
+
+        onValue(ref(db, 'tcpos/'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.menu) localStorage.setItem('tcpos_menu', JSON.stringify(data.menu));
+                if (data.tavoli) localStorage.setItem('tcpos_tavoli', JSON.stringify(data.tavoli));
+                if (data.vendite) localStorage.setItem('tcpos_vendite', JSON.stringify(data.vendite));
+                if (data.storico) localStorage.setItem('tcpos_ordini_storico', JSON.stringify(data.storico));
+                if (data.kds) localStorage.setItem('tcpos_kds_stati', JSON.stringify(data.kds));
+                if (data.tavoliStato) {
+                    Object.keys(data.tavoliStato).forEach(tId => {
+                        localStorage.setItem('ordine_tavolo_' + tId, JSON.stringify(data.tavoliStato[tId].ordine || []));
+                        localStorage.setItem('coperti_tavolo_' + tId, data.tavoliStato[tId].coperti || 2);
+                    });
+                }
+                forzaSincronizzazioneIniziale();
+            }
+        });
+    </script>
+
     <script>
         var audioCtx = null;
 
@@ -877,7 +1023,10 @@
         function getVendite() { return JSON.parse(localStorage.getItem('tcpos_vendite')) || []; }
         function getStoricoOrdini() { return JSON.parse(localStorage.getItem('tcpos_ordini_storico')) || []; }
         function getKdsStati() { return JSON.parse(localStorage.getItem('tcpos_kds_stati')) || {}; }
-        function salvaKdsStati(st) { localStorage.setItem('tcpos_kds_stati', JSON.stringify(st)); }
+        function salvaKdsStati(st) { 
+            localStorage.setItem('tcpos_kds_stati', JSON.stringify(st)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('kds', st);
+        }
 
         function registraOrdineInStorico(tipoDoc, reparto, articoliList, totaleDoc) {
             var storico = getStoricoOrdini();
@@ -894,6 +1043,7 @@
             };
             storico.unshift(nuovoOrdine);
             localStorage.setItem('tcpos_ordini_storico', JSON.stringify(storico));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('storico', storico);
             return nuovoOrdine;
         }
 
@@ -926,6 +1076,25 @@
             localStorage.setItem('prezzo_coperto_tavolo_' + tavoloAttivo, prezzoCoperto);
             localStorage.setItem('sconto_tavolo_' + tavoloAttivo, scontoValore);
             forzaSincronizzazioneIniziale();
+
+            if (window.cloudSalvaDati) {
+                let tavoliStato = {};
+                getTavoli().forEach(t => {
+                    tavoliStato[t.id] = {
+                        ordine: JSON.parse(localStorage.getItem('ordine_tavolo_' + t.id)) || [],
+                        coperti: parseInt(localStorage.getItem('coperti_tavolo_' + t.id), 10) || 2
+                    };
+                });
+                window.cloudSalvaDati('tavoliStato', tavoliStato);
+            }
+        }
+
+        function sincronizzaConCloud() {
+            if (window.cloudSalvaDati) {
+                window.cloudSalvaDati('menu', getMenu());
+                window.cloudSalvaDati('tavoli', getTavoli());
+                showToast("Sincronizzato con il Cloud in diretta!", "success");
+            }
         }
 
         function forzaSincronizzazioneIniziale() {
@@ -950,25 +1119,6 @@
 
             document.getElementById('op-label').textContent = '👤 Op: ' + operatoreCorrente.nome;
         }
-
-        // --- SINCRONIZZAZIONE AUTOMATICA MULTI-DISPOSITIVO E SCHEDA ---
-        window.addEventListener('storage', function(e) {
-            if (e.key && (e.key.startsWith('tcpos_') || e.key.startsWith('ordine_tavolo_') || e.key.startsWith('coperti_tavolo_'))) {
-                forzaSincronizzazioneIniziale();
-            }
-        });
-
-        // Polling leggero ogni 2 secondi per garantire la sincronia visiva istantanea tra PC e Palmare
-        setInterval(function() {
-            var savedOrdine = JSON.parse(localStorage.getItem('ordine_tavolo_' + tavoloAttivo)) || [];
-            var savedCoperti = parseInt(localStorage.getItem('coperti_tavolo_' + tavoloAttivo), 10) || 2;
-            if (JSON.stringify(savedOrdine) !== JSON.stringify(ordineCorrente) || savedCoperti !== coperti) {
-                ordineCorrente = savedOrdine;
-                coperti = savedCoperti;
-                renderCassa();
-                renderPalmare();
-            }
-        }, 2000);
 
         function switchTab(viewId) {
             playBeep('click');
@@ -1545,6 +1695,7 @@
             var vendite = getVendite();
             vendite.push({ data: new Date().toISOString(), tavolo: tavoloAttivo, totale: tot, metodo: metodo, operatore: operatoreCorrente.nome });
             localStorage.setItem('tcpos_vendite', JSON.stringify(vendite));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('vendite', vendite);
 
             var articoliList = [].concat(ordineCorrente);
             if (coperti > 0) articoliList.push({ nome: 'Coperto (' + coperti + 'x)', qta: 1, prezzo: coperti * prezzoCoperto });
@@ -1595,6 +1746,7 @@
             var vendite = getVendite();
             vendite.push({ data: new Date().toISOString(), tavolo: tavoloAttivo, totale: quota, metodo: "Quota Romana", operatore: operatoreCorrente.nome });
             localStorage.setItem('tcpos_vendite', JSON.stringify(vendite));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('vendite', vendite);
 
             registraOrdineInStorico("Quota Romana", "Cassa", [{ nome: 'Quota 1/' + num + ' Conto Tavolo ' + tavoloAttivo, qta: 1, prezzo: quota }], quota);
 
@@ -1665,6 +1817,7 @@
             var vendite = getVendite();
             vendite.push({ data: new Date().toISOString(), tavolo: tavoloAttivo, totale: tot, metodo: "Separazione Articoli", operatore: operatoreCorrente.nome });
             localStorage.setItem('tcpos_vendite', JSON.stringify(vendite));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('vendite', vendite);
 
             registraOrdineInStorico("Conto Separato", "Cassa", staccati, tot);
 
@@ -2315,12 +2468,38 @@
             var newId = String(maxId + 1);
             tavoli.push({ id: newId, nome: 'Tavolo ' + newId, sala: "Sala Principale" });
             localStorage.setItem('tcpos_tavoli', JSON.stringify(tavoli));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('tavoli', tavoli);
             forzaSincronizzazioneIniziale();
         }
-        function modTav(id, k, v) { var t = getTavoli(); var found = t.find(function(x) { return String(x.id) === String(id); }); if (found) found[k] = v; localStorage.setItem('tcpos_tavoli', JSON.stringify(t)); }
-        function delTav(id) { playBeep('click'); localStorage.setItem('tcpos_tavoli', JSON.stringify(getTavoli().filter(function(x) { return String(x.id) !== String(id); }))); forzaSincronizzazioneIniziale(); }
-        function aggiungiCategoria() { playBeep('click'); var n = prompt("Nome Categoria:"); if (n) { var m = getMenu(); m[n.toUpperCase()] = []; localStorage.setItem('tcpos_menu', JSON.stringify(m)); forzaSincronizzazioneIniziale(); } }
-        function delCat(cat) { playBeep('click'); var m = getMenu(); delete m[cat]; localStorage.setItem('tcpos_menu', JSON.stringify(m)); forzaSincronizzazioneIniziale(); }
+        function modTav(id, k, v) { 
+            var t = getTavoli(); var found = t.find(function(x) { return String(x.id) === String(id); }); if (found) found[k] = v; 
+            localStorage.setItem('tcpos_tavoli', JSON.stringify(t)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('tavoli', t);
+        }
+        function delTav(id) { 
+            playBeep('click'); 
+            var tavoliNew = getTavoli().filter(function(x) { return String(x.id) !== String(id); });
+            localStorage.setItem('tcpos_tavoli', JSON.stringify(tavoliNew)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('tavoli', tavoliNew);
+            forzaSincronizzazioneIniziale(); 
+        }
+        function aggiungiCategoria() { 
+            playBeep('click'); 
+            var n = prompt("Nome Categoria:"); 
+            if (n) { 
+                var m = getMenu(); m[n.toUpperCase()] = []; 
+                localStorage.setItem('tcpos_menu', JSON.stringify(m)); 
+                if (window.cloudSalvaDati) window.cloudSalvaDati('menu', m);
+                forzaSincronizzazioneIniziale(); 
+            } 
+        }
+        function delCat(cat) { 
+            playBeep('click'); 
+            var m = getMenu(); delete m[cat]; 
+            localStorage.setItem('tcpos_menu', JSON.stringify(m)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('menu', m);
+            forzaSincronizzazioneIniziale(); 
+        }
         
         function salvaNuovoPiatto() {
             playBeep('click');
@@ -2337,6 +2516,7 @@
             if (!m[cat]) m[cat] = [];
             m[cat].push({ nome: nome, prezzo: prezzo, uscita: 1, stampante: stampante });
             localStorage.setItem('tcpos_menu', JSON.stringify(m));
+            if (window.cloudSalvaDati) window.cloudSalvaDati('menu', m);
             
             document.getElementById('inp-piatto-nome').value = '';
             document.getElementById('inp-piatto-prezzo').value = '';
@@ -2344,8 +2524,18 @@
             showToast("Piatto aggiunto al menu", 'success');
         }
 
-        function modPiatto(cat, idx, k, v) { var m = getMenu(); if(m[cat] && m[cat][idx]) m[cat][idx][k] = v; localStorage.setItem('tcpos_menu', JSON.stringify(m)); }
-        function delPiatto(cat, idx) { playBeep('click'); var m = getMenu(); if(m[cat]) m[cat].splice(idx, 1); localStorage.setItem('tcpos_menu', JSON.stringify(m)); forzaSincronizzazioneIniziale(); }
+        function modPiatto(cat, idx, k, v) { 
+            var m = getMenu(); if(m[cat] && m[cat][idx]) m[cat][idx][k] = v; 
+            localStorage.setItem('tcpos_menu', JSON.stringify(m)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('menu', m);
+        }
+        function delPiatto(cat, idx) { 
+            playBeep('click'); 
+            var m = getMenu(); if(m[cat]) m[cat].splice(idx, 1); 
+            localStorage.setItem('tcpos_menu', JSON.stringify(m)); 
+            if (window.cloudSalvaDati) window.cloudSalvaDati('menu', m);
+            forzaSincronizzazioneIniziale(); 
+        }
 
         function esportaBackup() {
             playBeep('click');
