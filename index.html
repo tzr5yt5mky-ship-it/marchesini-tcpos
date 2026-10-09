@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.8 Pro (Cloud Realtime)</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.9 Pro (MQTT Realtime)</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -414,6 +414,8 @@
         .toast.danger { background: var(--accent-red); }
         .toast.warning { background: var(--accent-amber); color: #000; }
     </style>
+    <!-- Inclusione libreria MQTT via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 </head>
 <body>
     <div id="toast-container"></div>
@@ -425,6 +427,7 @@
             <button class="nav-btn" id="tab-btn-palmare" onclick="switchTab('palmare')">📱 PALMARE</button>
             <button class="nav-btn" id="tab-btn-admin" onclick="switchTab('admin')">⚙️ BACK-OFFICE</button>
             <button class="nav-btn" id="theme-toggle-btn" onclick="toggleTema()" title="Cambia Tema">🌞</button>
+            <button class="nav-btn" id="mqtt-status-badge" style="background:var(--accent-red); color:white; border:none;" title="Stato Cloud MQTT">🔴 Offline</button>
             <div class="operator-badge" onclick="apriSelezionaOperatore()" id="op-label">👤 Op: Marco</div>
         </div>
     </div>
@@ -515,6 +518,15 @@
                         <div class="lbl">Scontrino Medio</div>
                         <div class="val" id="stat-scontrino-medio" style="color:var(--accent-amber);">€ 0.00</div>
                     </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h2>🌐 Connessione Cloud in Tempo Reale (MQTT)</h2>
+                <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">Inserisci lo stesso nome di Hotspot/Stanza su tutti i dispositivi (Cassa e Palmari) per sincronizzarli all'istante.</p>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="text" id="inp-hotspot-id" placeholder="Es. Marchesini_Sala1" style="flex:1;">
+                    <button class="btn-adm success" onclick="salvaHotspotId()">Connetti Hotspot</button>
                 </div>
             </div>
 
@@ -821,50 +833,117 @@
         </div>
     </div>
 
-    <!-- Firebase SDK Modular per la sincronizzazione in tempo reale -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // SOSTITUISCI QUESTO BLOCCO CON LE TUE CHIAVI FIREBASE
-        const firebaseConfig = {
-            apiKey: "INSERISCI_TUA_API_KEY",
-            authDomain: "tuo-progetto.firebaseapp.com",
-            databaseURL: "https://tuo-progetto-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "tuo-progetto",
-            storageBucket: "tuo-progetto.appspot.com",
-            messagingSenderId: "INSERISCI_SENDER_ID",
-            appId: "INSERISCI_APP_ID"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        window.cloudSalvaDati = function(chiave, dati) {
-            set(ref(db, 'tcpos/' + chiave), dati).catch(err => console.error("Cloud Error:", err));
-        };
-
-        onValue(ref(db, 'tcpos/'), (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                if (data.menu) localStorage.setItem('tcpos_menu', JSON.stringify(data.menu));
-                if (data.tavoli) localStorage.setItem('tcpos_tavoli', JSON.stringify(data.tavoli));
-                if (data.vendite) localStorage.setItem('tcpos_vendite', JSON.stringify(data.vendite));
-                if (data.storico) localStorage.setItem('tcpos_ordini_storico', JSON.stringify(data.storico));
-                if (data.kds) localStorage.setItem('tcpos_kds_stati', JSON.stringify(data.kds));
-                if (data.tavoliStato) {
-                    Object.keys(data.tavoliStato).forEach(tId => {
-                        localStorage.setItem('ordine_tavolo_' + tId, JSON.stringify(data.tavoliStato[tId].ordine || []));
-                        localStorage.setItem('coperti_tavolo_' + tId, data.tavoliStato[tId].coperti || 2);
-                    });
-                }
-                forzaSincronizzazioneIniziale();
-            }
-        });
-    </script>
-
     <script>
         var audioCtx = null;
+        var mqttClient = null;
+
+        function getHotspotId() {
+            return localStorage.getItem('tcpos_hotspot_id') || 'marchesini_hotspot_default';
+        }
+
+        function initMQTT() {
+            var hotspotId = getHotspotId();
+            var clientId = 'tcpos_' + Math.random().toString(16).substring(2, 8);
+            var brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+
+            try {
+                mqttClient = mqtt.connect(brokerUrl, { clientId: clientId, clean: true, reconnectPeriod: 3000 });
+
+                mqttClient.on('connect', function () {
+                    console.log("MQTT Connesso con successo");
+                    var statusBtn = document.getElementById('mqtt-status-badge');
+                    if (statusBtn) {
+                        statusBtn.style.background = 'var(--accent-green)';
+                        statusBtn.textContent = '🟢 Online';
+                    }
+                    mqttClient.subscribe('tcpos/' + hotspotId + '/#', function (err) {
+                        if (!err) {
+                            console.log("Iscritto al canale: tcpos/" + hotspotId + "/#");
+                            sincronizzaConCloud();
+                        }
+                    });
+                });
+
+                mqttClient.on('message', function (topic, payload) {
+                    try {
+                        var data = JSON.parse(payload.toString());
+                        var parts = topic.split('/');
+                        var action = parts[parts.length - 1];
+
+                        if (action === 'sync_state') {
+                            if (data.menu) localStorage.setItem('tcpos_menu', JSON.stringify(data.menu));
+                            if (data.tavoli) localStorage.setItem('tcpos_tavoli', JSON.stringify(data.tavoli));
+                            if (data.vendite) localStorage.setItem('tcpos_vendite', JSON.stringify(data.vendite));
+                            if (data.storico) localStorage.setItem('tcpos_ordini_storico', JSON.stringify(data.storico));
+                            if (data.kds) localStorage.setItem('tcpos_kds_stati', JSON.stringify(data.kds));
+                            if (data.tavoliStato) {
+                                Object.keys(data.tavoliStato).forEach(tId => {
+                                    localStorage.setItem('ordine_tavolo_' + tId, JSON.stringify(data.tavoliStato[tId].ordine || []));
+                                    localStorage.setItem('coperti_tavolo_' + tId, data.tavoliStato[tId].coperti || 2);
+                                });
+                            }
+                            forzaSincronizzazioneIniziale();
+                        } else if (action === 'menu_request') {
+                            sincronizzaConCloud();
+                        }
+                    } catch (e) {
+                        console.error("Errore parsing MQTT message:", e);
+                    }
+                });
+
+                mqttClient.on('error', function (err) {
+                    console.error("MQTT Error:", err);
+                    var statusBtn = document.getElementById('mqtt-status-badge');
+                    if (statusBtn) {
+                        statusBtn.style.background = 'var(--accent-red)';
+                        statusBtn.textContent = '🔴 Offline';
+                    }
+                });
+            } catch (e) {
+                console.error("Impossibile inizializzare MQTT:", e);
+            }
+        }
+
+        window.cloudSalvaDati = function(chiave, dati) {
+            if (mqttClient && mqttClient.connected) {
+                let tavoliStato = {};
+                if (getTavoli) {
+                    getTavoli().forEach(t => {
+                        tavoliStato[t.id] = {
+                            ordine: JSON.parse(localStorage.getItem('ordine_tavolo_' + t.id)) || [],
+                            coperti: parseInt(localStorage.getItem('coperti_tavolo_' + t.id), 10) || 2
+                        };
+                    });
+                }
+                var payloadObj = {
+                    menu: getMenu(),
+                    tavoli: getTavoli(),
+                    vendite: getVendite(),
+                    storico: getStoricoOrdini(),
+                    kds: getKdsStati(),
+                    tavoliStato: tavoliStato
+                };
+                mqttClient.publish('tcpos/' + getHotspotId() + '/sync_state', JSON.stringify(payloadObj), { qos: 0, retain: true });
+            }
+        };
+
+        function sincronizzaConCloud() {
+            if (mqttClient && mqttClient.connected) {
+                window.cloudSalvaDati('sync', {});
+                showToast("Sincronizzato via MQTT!", "success");
+            } else {
+                showToast("Connessione Cloud non attiva", "warning");
+            }
+        }
+
+        function salvaHotspotId() {
+            playBeep('click');
+            var val = document.getElementById('inp-hotspot-id').value.trim();
+            if (!val) return showToast("Inserisci un nome Hotspot valido!", 'danger');
+            localStorage.setItem('tcpos_hotspot_id', val);
+            showToast("Hotspot aggiornato! Riconnessione in corso...", 'success');
+            if (mqttClient) mqttClient.end(true, {}, () => { initMQTT(); });
+        }
 
         function playBeep(type) {
             if (!type) type = 'click';
@@ -1039,13 +1118,17 @@
                 reparto: reparto || 'Tutti',
                 tavolo: tavoloAttivo,
                 operatore: operatoreCorrente.nome,
-                articoli: articoliList.map(function(a) { return { nome: a.nome, qta: a.qta || 1, prezzo: a.prezzo, variante: a.variante || '' }; }),
+                articoli: articlesListMapper(articoliList),
                 totale: totaleDoc
             };
             storico.unshift(nuovoOrdine);
             localStorage.setItem('tcpos_ordini_storico', JSON.stringify(storico));
             if (window.cloudSalvaDati) window.cloudSalvaDati('storico', storico);
             return nuovoOrdine;
+        }
+
+        function articlesListMapper(list) {
+            return list.map(function(a) { return { nome: a.nome, qta: a.qta || 1, prezzo: a.prezzo, variante: a.variante || '' }; });
         }
 
         var operatoreCorrente = getOperatori()[0];
@@ -1090,14 +1173,6 @@
             }
         }
 
-        function sincronizzaConCloud() {
-            if (window.cloudSalvaDati) {
-                window.cloudSalvaDati('menu', getMenu());
-                window.cloudSalvaDati('tavoli', getTavoli());
-                showToast("Sincronizzato con il Cloud in diretta!", "success");
-            }
-        }
-
         function forzaSincronizzazioneIniziale() {
             caricaTemaSalvato();
             caricaStatoTavolo();
@@ -1117,6 +1192,8 @@
             if (inpPiva) inpPiva.value = dati.piva;
             var inpPie = document.getElementById('inp-pie-ristorante');
             if (inpPie) inpPie.value = dati.pie;
+            var inpHot = document.getElementById('inp-hotspot-id');
+            if (inpHot) inpHot.value = getHotspotId();
 
             document.getElementById('op-label').textContent = '👤 Op: ' + operatoreCorrente.nome;
         }
@@ -2590,7 +2667,6 @@
                 localStorage.removeItem('tcpos_kds_stati');
                 localStorage.removeItem('tcpos_ordini_storico');
                 
-                // INTEGRAZIONE: Elimina esplicitamente i dati anche dal cloud
                 if (window.cloudSalvaDati) {
                     window.cloudSalvaDati('vendite', []);
                     window.cloudSalvaDati('storico', []);
@@ -2604,6 +2680,7 @@
         }
 
         forzaSincronizzazioneIniziale();
+        initMQTT();
     </script>
 </body>
 </html>
