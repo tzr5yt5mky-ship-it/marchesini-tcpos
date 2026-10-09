@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.8 Pro</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.9 Pro</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -950,6 +950,25 @@
 
             document.getElementById('op-label').textContent = '👤 Op: ' + operatoreCorrente.nome;
         }
+
+        // --- SINCRONIZZAZIONE AUTOMATICA MULTI-DISPOSITIVO E SCHEDA ---
+        window.addEventListener('storage', function(e) {
+            if (e.key && (e.key.startsWith('tcpos_') || e.key.startsWith('ordine_tavolo_') || e.key.startsWith('coperti_tavolo_'))) {
+                forzaSincronizzazioneIniziale();
+            }
+        });
+
+        // Polling leggero ogni 2 secondi per garantire la sincronia visiva istantanea tra PC e Palmare
+        setInterval(function() {
+            var savedOrdine = JSON.parse(localStorage.getItem('ordine_tavolo_' + tavoloAttivo)) || [];
+            var savedCoperti = parseInt(localStorage.getItem('coperti_tavolo_' + tavoloAttivo), 10) || 2;
+            if (JSON.stringify(savedOrdine) !== JSON.stringify(ordineCorrente) || savedCoperti !== coperti) {
+                ordineCorrente = savedOrdine;
+                coperti = savedCoperti;
+                renderCassa();
+                renderPalmare();
+            }
+        }, 2000);
 
         function switchTab(viewId) {
             playBeep('click');
