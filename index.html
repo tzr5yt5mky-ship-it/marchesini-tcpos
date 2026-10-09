@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.4 Pro</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v3.8 Pro</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -139,12 +139,13 @@
         .var-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-sub); border-radius: 6px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
         .var-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
 
-        .actions-panel { background: var(--bg-panel); padding: 10px; display: grid; grid-template-rows: repeat(9, 1fr); gap: 8px; border-left: 1px solid var(--border-color); }
+        .actions-panel { background: var(--bg-panel); padding: 10px; display: grid; grid-template-rows: repeat(10, 1fr); gap: 8px; border-left: 1px solid var(--border-color); }
         .action-btn { color: #ffffff; border-radius: 8px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; transition: all 0.15s ease; border: 1px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
         .action-btn:hover { filter: brightness(1.15); transform: translateY(-2px); }
         .action-btn:active { transform: scale(0.95); }
         
         .action-btn.btn-reset { background: #991b1b; border-color: #ef4444; }
+        .action-btn.btn-richiama { background: #1d4ed8; border-color: #3b82f6; }
         .action-btn.btn-mappa { background: #5b21b6; border-color: #8b5cf6; }
         .action-btn.btn-sposta { background: #0e7490; border-color: #06b6d4; }
         .action-btn.btn-bar { background: #b45309; border-color: #f59e0b; }
@@ -154,7 +155,7 @@
         .action-btn.btn-incassa { background: #047857; border-color: #10b981; font-size: 0.92rem; font-weight: 900; }
         .action-btn.btn-kds { background: #15803d; border-color: #22c55e; }
 
-        /* --- 2. PALMARE OTTIMIZZATO PER MOBILE SAFARI / IPHONE --- */
+        /* --- PALMARE --- */
         #view-palmare { background: var(--bg-body); padding: 0; justify-content: center; align-items: flex-start; }
         
         .mobile-shell { width: 100%; height: 100%; max-width: 100%; max-height: 100%; background: var(--bg-body); border: none; border-radius: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: none; }
@@ -358,6 +359,7 @@
 
         <div class="actions-panel">
             <button class="action-btn btn-reset" onclick="resettaTavoloCorrente()">🗑️ RESET TAVOLO</button>
+            <button class="action-btn btn-richiama" onclick="apriModalRichiamaTavolo()">📂 RICHHIAMA TAVOLO</button>
             <button class="action-btn btn-mappa" onclick="apriMappaTavoli()">🗺️ MAPPA TAVOLI</button>
             <button class="action-btn btn-sposta" onclick="apriModalSpostaUnisci()">🔀 SPOSTA/UNISCI</button>
             <button class="action-btn btn-bar" onclick="stampaComandaPerReparto('Bar')">☕ COMANDA BAR</button>
@@ -369,7 +371,7 @@
         </div>
     </div>
 
-    <!-- 2. PALMARE (OTTIMIZZATO MOBILE E QUANTITÀ) -->
+    <!-- 2. PALMARE -->
     <div id="view-palmare" class="app-view">
         <div class="mobile-shell">
             <div class="m-header">
@@ -517,6 +519,17 @@
                 <div id="lista-operatori-select" style="display:flex; flex-direction:column; gap:8px;"></div>
             </div>
             <div class="modal-footer"><button class="modal-close-btn" onclick="chiudiModal('modal-select-op')">CHIUDI</button></div>
+        </div>
+    </div>
+
+    <div id="modal-richiama-tavolo" class="modal-overlay">
+        <div class="modal-box" style="width:480px;">
+            <div class="modal-header" style="background:var(--accent-blue); color:#fff;"><span>📂 RICHHIAMA E MODIFICA TAVOLO</span></div>
+            <div class="modal-body">
+                <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">Seleziona un tavolo occupato per caricarlo e modificarne il conto:</p>
+                <div id="lista-tavoli-attivi-modal" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer"><button class="modal-close-btn" onclick="chiudiModal('modal-richiama-tavolo')">CHIUDI</button></div>
         </div>
     </div>
 
@@ -681,7 +694,7 @@
 
     <div id="modal-kds" class="modal-overlay">
         <div class="modal-box" style="width:880px; height:580px;">
-            <div class="modal-header" style="background:#15803d; color:#fff;"><span>KITCHEN DISPLAY SYSTEM (KDS) - Avanzamento Stato Comande</span></div>
+            <div class="modal-header" style="background:#15803d; color:#fff;"><span>KITCHEN DISPLAY SYSTEM (KDS) - Sequenza per Uscita</span></div>
             <div class="modal-body" id="kds-body" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; align-content:start;"></div>
             <div class="modal-footer"><button class="modal-close-btn" onclick="chiudiModal('modal-kds')">CHIUDI</button></div>
         </div>
@@ -980,6 +993,55 @@
                 container.appendChild(btn);
             });
             document.getElementById('modal-select-op').style.display = 'flex';
+        }
+
+        function apriModalRichiamaTavolo() {
+            playBeep('click');
+            var container = document.getElementById('lista-tavoli-attivi-modal');
+            container.innerHTML = '';
+            var tavoli = getTavoli();
+            var occupatiCount = 0;
+
+            tavoli.forEach(function(t) {
+                var ordT = JSON.parse(localStorage.getItem('ordine_tavolo_' + t.id)) || [];
+                if (ordT.length > 0) {
+                    occupatiCount++;
+                    var copT = localStorage.getItem('coperti_tavolo_' + t.id) || 2;
+                    var subT = 0;
+                    ordT.forEach(function(item) { subT += (item.prezzo * (item.qta || 1)); });
+
+                    var btn = document.createElement('button');
+                    btn.className = 'btn-adm';
+                    btn.style.cssText = 'padding:12px; font-size:0.95rem; text-align:left; background:var(--bg-card); border:1px solid ' + (String(t.id) === String(tavoloAttivo) ? 'var(--accent-amber)' : 'var(--border-sub)') + '; color:var(--text-main); display:flex; justify-content:space-between; align-items:center; cursor:pointer;';
+                    
+                    var infoDiv = document.createElement('div');
+                    infoDiv.innerHTML = '<b>' + t.nome + '</b> <span style="font-size:0.75rem; color:var(--text-muted);">(' + t.sala + ')</span><div style="font-size:0.78rem; color:var(--accent-blue); margin-top:2px;">Articoli: ' + ordT.length + ' | Coperti: ' + copT + '</div>';
+                    btn.appendChild(infoDiv);
+
+                    var priceDiv = document.createElement('div');
+                    priceDiv.style.cssText = 'font-weight:900; color:var(--accent-green); font-size:1.05rem;';
+                    priceDiv.textContent = '€ ' + subT.toFixed(2);
+                    btn.appendChild(priceDiv);
+
+                    btn.onclick = function() {
+                        playBeep('click');
+                        tavoloAttivo = String(t.id);
+                        chiudiModal('modal-richiama-tavolo');
+                        forzaSincronizzazioneIniziale();
+                        showToast('Tavolo ' + t.nome + ' richiamato e pronto per la modifica', 'success');
+                    };
+                    container.appendChild(btn);
+                }
+            });
+
+            if (occupatiCount === 0) {
+                var emptyDiv = document.createElement('div');
+                emptyDiv.style.cssText = 'text-align:center; padding:20px; color:var(--text-muted);';
+                emptyDiv.textContent = 'Nessun tavolo occupato al momento.';
+                container.appendChild(emptyDiv);
+            }
+
+            document.getElementById('modal-richiama-tavolo').style.display = 'flex';
         }
 
         function filtrPiatta(q) { searchQuery = q.toLowerCase().trim(); renderCassa(); }
@@ -1300,7 +1362,6 @@
                 var rightDiv = document.createElement('div');
                 rightDiv.style.cssText = 'display: flex; gap: 4px; align-items: center;';
 
-                // Controlli di quantità nel palmare (+ / -)
                 var btnMinus = document.createElement('button');
                 btnMinus.className = 'btn-qty';
                 btnMinus.textContent = '-';
@@ -1319,7 +1380,6 @@
                 rightDiv.appendChild(qtyVal);
                 rightDiv.appendChild(btnPlus);
 
-                // Bottone Nota
                 var noteBtn = document.createElement('button');
                 noteBtn.style.cssText = 'background:var(--accent-amber); color:#000; border:none; border-radius:6px; padding:4px 8px; cursor:pointer; font-weight:bold; font-size:0.82rem; margin-left:4px;';
                 noteBtn.textContent = '✏️';
@@ -1330,7 +1390,6 @@
                 };
                 rightDiv.appendChild(noteBtn);
 
-                // Bottone Elimina
                 var delBtn = document.createElement('button');
                 delBtn.style.cssText = 'background:var(--accent-red); color:white; border:none; border-radius:6px; padding:4px 8px; cursor:pointer; font-weight:bold; font-size:0.82rem;';
                 delBtn.textContent = '✕';
@@ -1611,7 +1670,13 @@
                 return faReparto && !item.inviato;
             });
 
-            if (articoliReparto.length === 0) return showToast('Nessun NUOVO articolo da inviare a: ' + repartoDestinazione, 'warning');
+            if (articoliReparto.length === 0) {
+                articoliReparto = ordineCorrente.filter(function(item) {
+                    return (repartoDestinazione === 'Bar') ? item.stampante === 'Bar' : item.stampante !== 'Bar';
+                });
+            }
+
+            if (articoliReparto.length === 0) return showToast('Nessun articolo da inviare a: ' + repartoDestinazione, 'warning');
 
             playBeep('success');
             var reg = registraOrdineInStorico("Comanda", repartoDestinazione, articoliReparto, 0);
@@ -1648,12 +1713,14 @@
 
             mostraAnteprimaThermal(html);
 
-            articoliReparto.forEach(function(i) { i.inviato = true; });
+            ordineCorrente.forEach(function(i) { i.inviato = true; });
             salvaStatoTavolo();
 
             if (repartoDestinazione !== 'Bar') {
                 var kds = getKdsStati();
-                kds[tavoloAttivo] = { stato: 'In Preparazione', ora: Date.now() };
+                if (!kds[tavoloAttivo]) {
+                    kds[tavoloAttivo] = { 1: 'In Attesa', 2: 'In Attesa', 3: 'In Attesa', 4: 'In Attesa' };
+                }
                 salvaKdsStati(kds);
             }
 
@@ -1662,7 +1729,9 @@
 
         function stampaComandaPreview() {
             var articoliDaInviare = ordineCorrente.filter(function(item) { return !item.inviato; });
-            if (articoliDaInviare.length === 0) return showToast("Tutti gli articoli risultano già inviati!", 'warning');
+            if (articoliDaInviare.length === 0) articoliDaInviare = ordineCorrente;
+            if (articoliDaInviare.length === 0) return showToast("Nessun articolo da inviare!", 'warning');
+
             playBeep('success');
 
             var reg = registraOrdineInStorico("Comanda", "Tutti i Reparti", articoliDaInviare, 0);
@@ -1700,7 +1769,9 @@
             salvaStatoTavolo();
 
             var kds = getKdsStati();
-            kds[tavoloAttivo] = { stato: 'In Preparazione', ora: Date.now() };
+            if (!kds[tavoloAttivo]) {
+                kds[tavoloAttivo] = { 1: 'In Attesa', 2: 'In Attesa', 3: 'In Attesa', 4: 'In Attesa' };
+            }
             salvaKdsStati(kds);
 
             showToast("Comanda inviata", 'success');
@@ -1752,7 +1823,7 @@
 
             var html = 
                 '<div class="thermal-header">' +
-                    '<div class="thermal-logo">' + dati.nome.toUpperCase() +
+                    '<div class="thermal-logo">' + dati.nome.toUpperCase() + '</div>' +
                     '<div class="thermal-sub">' + dati.sub + '</div>' +
                     '<div class="thermal-sub" style="font-size:0.68rem; margin-top:2px;">' + dati.piva + '</div>' +
                     '<div class="thermal-title">DOCUMENTO COMMERCIALE</div>' +
@@ -1883,52 +1954,55 @@
                 var inv = ord.filter(function(x) { return x.inviato; });
                 if (inv.length > 0) {
                     hasActive = true;
-                    if (!kdsStati[t.id]) kdsStati[t.id] = { stato: 'In Preparazione', ora: Date.now() };
-                    var stInfo = kdsStati[t.id];
-                    var bgCol = stInfo.stato === 'Pronto' ? 'var(--accent-green)' : 'var(--accent-blue)';
-                    var minPassati = Math.floor((Date.now() - stInfo.ora) / 60000);
+                    if (!kdsStati[t.id]) {
+                        kdsStati[t.id] = { 1: 'In Attesa', 2: 'In Attesa', 3: 'In Attesa', 4: 'In Attesa' };
+                    }
+                    var stUscite = kdsStati[t.id];
 
                     var card = document.createElement('div');
-                    card.style.cssText = 'background:var(--bg-panel); color:var(--text-main); padding:12px; border-radius:8px; border:2px solid ' + bgCol + '; cursor:pointer;';
+                    card.style.cssText = 'background:var(--bg-panel); color:var(--text-main); padding:12px; border-radius:8px; border:2px solid var(--border-sub); display:flex; flex-direction:column; gap:8px;';
                     
                     var topRow = document.createElement('div');
-                    topRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;';
+                    topRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:6px;';
                     
                     var h4 = document.createElement('h4');
                     h4.style.cssText = 'margin:0; color:var(--accent-amber);';
                     h4.textContent = t.nome;
                     topRow.appendChild(h4);
-
-                    var stBadge = document.createElement('span');
-                    stBadge.style.cssText = 'background:' + bgCol + '; color:white; padding:3px 8px; font-size:0.72rem; border-radius:6px; font-weight:bold;';
-                    stBadge.textContent = stInfo.stato + ' (' + minPassati + 'm)';
-                    topRow.appendChild(stBadge);
-
                     card.appendChild(topRow);
 
-                    inv.forEach(function(x) {
-                        var q = x.qta || 1;
-                        var itemDiv = document.createElement('div');
-                        itemDiv.style.cssText = 'font-size:0.82rem; margin-bottom:4px;';
-                        itemDiv.textContent = '• ' + (q > 1 ? q + 'x ' : '') + x.nome + ' (Usc. ' + (x.uscita || 1) + ')';
-                        card.appendChild(itemDiv);
+                    for (var u = 1; u <= 4; u++) {
+                        var articoliUscita = inv.filter(function(x) { return (x.uscita || 1) === u; });
+                        if (articoliUscita.length > 0) {
+                            var statoUscita = stUscite[u] || 'In Attesa';
+                            var bgCol = statoUscita === 'Pronto' ? 'var(--accent-green)' : (statoUscita === 'In Preparazione' ? 'var(--accent-blue)' : 'var(--bg-card)');
 
-                        if (x.variante) {
-                            var varDiv = document.createElement('div');
-                            varDiv.style.cssText = 'font-size:0.72rem; color:var(--accent-amber); font-style:italic;';
-                            varDiv.textContent = ' * ' + x.variante;
-                            card.appendChild(varDiv);
+                            var uscitaBox = document.createElement('div');
+                            uscitaBox.style.cssText = 'background:var(--bg-body); padding:8px; border-radius:6px; border-left:4px solid ' + bgCol + ';';
+
+                            var headerUscita = document.createElement('div');
+                            headerUscita.style.cssText = 'display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:bold; margin-bottom:4px; cursor:pointer;';
+                            headerUscita.innerHTML = '<span>Uscita ' + u + '</span> <span style="background:' + bgCol + '; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">' + statoUscita + ' 🔄</span>';
+                            
+                            headerUscita.onclick = (function(tavId, uscitaNum, currentStato) {
+                                return function() {
+                                    ciclaSequenzaUscita(tavId, uscitaNum, currentStato);
+                                };
+                            })(t.id, u, statoUscita);
+
+                            uscitaBox.appendChild(headerUscita);
+
+                            articoliUscita.forEach(function(x) {
+                                var q = x.qta || 1;
+                                var itemDiv = document.createElement('div');
+                                itemDiv.style.cssText = 'font-size:0.78rem; color:var(--text-muted); padding-left:6px;';
+                                itemDiv.textContent = '• ' + (q > 1 ? q + 'x ' : '') + x.nome + (x.variante ? ' (' + x.variante + ')' : '');
+                                uscitaBox.appendChild(itemDiv);
+                            });
+
+                            card.appendChild(uscitaBox);
                         }
-                    });
-
-                    var footerHint = document.createElement('div');
-                    footerHint.style.cssText = 'font-size:0.7rem; color:var(--text-muted); margin-top:10px; text-align:right;';
-                    footerHint.textContent = 'Clicca per cambiare stato ➡️';
-                    card.appendChild(footerHint);
-
-                    card.onclick = function() {
-                        ciclaStatoKDS(t.id);
-                    };
+                    }
 
                     body.appendChild(card);
                 }
@@ -1942,14 +2016,19 @@
             }
         }
 
-        function ciclaStatoKDS(tavId) {
+        function ciclaSequenzaUscita(tavId, uscitaNum, statoAttuale) {
             playBeep('click');
             var kds = getKdsStati();
-            if (kds[tavId]) {
-                kds[tavId].stato = (kds[tavId].stato === 'In Preparazione') ? 'Pronto' : 'In Preparazione';
-                salvaKdsStati(kds);
-                renderKDS();
-            }
+            if (!kds[tavId]) kds[tavId] = { 1: 'In Attesa', 2: 'In Attesa', 3: 'In Attesa', 4: 'In Attesa' };
+            
+            var nuovoStato = 'In Attesa';
+            if (statoAttuale === 'In Attesa') nuovoStato = 'In Preparazione';
+            else if (statoAttuale === 'In Preparazione') nuovoStato = 'Pronto';
+            else if (statoAttuale === 'Pronto') nuovoStato = 'In Attesa';
+
+            kds[tavId][uscitaNum] = nuovoStato;
+            salvaKdsStati(kds);
+            renderKDS();
         }
 
         function chiudiModal(id) { playBeep('click'); document.getElementById(id).style.display = 'none'; }
