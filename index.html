@@ -826,14 +826,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // SOSTITUISCI QUESTO BLOCCO CON LE TUE CHIAVI FIREBASE
         const firebaseConfig = {
             apiKey: "INSERISCI_TUA_API_KEY",
             authDomain: "tuo-progetto.firebaseapp.com",
             databaseURL: "https://tuo-progetto-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "tuo-progetto",
             storageBucket: "tuo-progetto.appspot.com",
-            messagingSenderId: "ID",
-            appId: "ID"
+            messagingSenderId: "INSERISCI_SENDER_ID",
+            appId: "INSERISCI_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -2588,6 +2589,15 @@
                 localStorage.removeItem('tcpos_vendite');
                 localStorage.removeItem('tcpos_kds_stati');
                 localStorage.removeItem('tcpos_ordini_storico');
+                
+                // INTEGRAZIONE: Elimina esplicitamente i dati anche dal cloud
+                if (window.cloudSalvaDati) {
+                    window.cloudSalvaDati('vendite', []);
+                    window.cloudSalvaDati('storico', []);
+                    window.cloudSalvaDati('kds', {});
+                    window.cloudSalvaDati('tavoliStato', {});
+                }
+                
                 forzaSincronizzazioneIniziale();
                 showToast("Sistema azzerato", 'info');
             }
