@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Marchesini TCPOS - Suite Enterprise Ultimate v13.3 Pro</title>
+    <title>Marchesini TCPOS - Suite Enterprise Ultimate v13.3 Pro (Ultra Edition)</title>
     <style>
         :root {
             --bg-body: #090d16;
@@ -510,7 +510,7 @@
             <button class="action-btn btn-cucina" onclick="stampaComandaPerReparto('Cucina')">🍳 COMANDA CUCINA (SOLO CUCINA)</button>
             <button class="action-btn btn-preconto" onclick="stampaPrecontoPreview()">🧾 PRECONTO</button>
             <button class="action-btn btn-dividi" onclick="apriModalDividiConto()">🍕 DIVIDI CONTO</button>
-            <button class="action-btn btn-incassa" onclick="apriModalIncasso()">💰 INCASSA</button>
+            <button class="action-btn btn-incassa" onclick="apriModalIncassa()">💰 INCASSA</button>
             <button class="action-btn btn-kds" onclick="apriKDS()">🍳 KDS CUCINA</button>
         </div>
     </div>
@@ -875,6 +875,7 @@
     <script>
         var audioCtx = null;
         var mqttClient = null;
+        var isSyncingFromRemote = false;
 
         var timerUsciteDefault = { 1: 0, 2: 5, 3: 15, 4: 28, 5: 30, 6: 45 };
         var nomiUscite = { 1: "Bevande", 2: "Antipasti", 3: "Primi", 4: "Secondi", 5: "Contorni", 6: "Dolci" };
@@ -958,6 +959,7 @@
                 });
                 mqttClient.on('message', function (topic, payload) {
                     try {
+                        isSyncingFromRemote = true;
                         var data = JSON.parse(payload.toString());
                         if (data.menu) localStorage.setItem('tcpos_menu', JSON.stringify(data.menu));
                         if (data.tavoli) localStorage.setItem('tcpos_tavoli', JSON.stringify(data.tavoli));
@@ -966,22 +968,55 @@
                         if (data.asporti) localStorage.setItem('tcpos_lista_asporti', JSON.stringify(data.asporti));
                         if (data.intestazione) localStorage.setItem('tcpos_intestazione', JSON.stringify(data.intestazione));
                         if (data.operatori) localStorage.setItem('tcpos_operatori', JSON.stringify(data.operatori));
+                        
+                        if (data.contesti) {
+                            Object.keys(data.contesti).forEach(k => {
+                                localStorage.setItem(k, data.contesti[k]);
+                            });
+                        }
                         forzaSincronizzazioneIniziale();
-                    } catch (e) {}
+                        setTimeout(() => { isSyncingFromRemote = false; }, 100);
+                    } catch (e) { isSyncingFromRemote = false; }
                 });
             } catch (e) {}
         }
 
         window.cloudSalvaDati = function() {
+            if (isSyncingFromRemote) return;
             if (mqttClient && mqttClient.connected) {
-                var payloadObj = { menu: getMenu(), tavoli: getTavoli(), vendite: getVendite(), kds: getKdsStati(), asporti: getListaAsporti(), intestazione: getDatiIntestazione(), operatori: getOperatori() };
+                var ordiniContesti = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    var key = localStorage.key(i);
+                    if (key.startsWith('ordine_contesto_') || key.startsWith('coperti_contesto_') || key.startsWith('sconto_contesto_')) {
+                        ordiniContesti[key] = localStorage.getItem(key);
+                    }
+                }
+                var payloadObj = { 
+                    menu: getMenu(), 
+                    tavoli: getTavoli(), 
+                    vendite: getVendite(), 
+                    kds: getKdsStati(), 
+                    asporti: getListaAsporti(), 
+                    intestazione: getDatiIntestazione(), 
+                    operatori: getOperatori(),
+                    contesti: ordiniContesti 
+                };
                 mqttClient.publish('tcpos/' + getHotspotId() + '/sync_state', JSON.stringify(payloadObj), { qos: 0, retain: true });
             }
         };
 
+        // Ascolto sincronizzazione locale tra schede diverse dello stesso browser
+        window.addEventListener('storage', function(e) {
+            forzaSincronizzazioneIniziale();
+        });
+
         function sincronizzaConCloud() {
-            if (mqttClient && mqttClient.connected) { window.cloudSalvaDati(); showToast("Sincronizzato via MQTT!", "success"); }
-            else { showToast("Connessione Cloud non attiva", "warning"); }
+            if (mqttClient && mqttClient.connected) { 
+                window.cloudSalvaDati(); 
+                showToast("Sincronizzato via MQTT!", "success"); 
+            } else { 
+                showToast("Connessione Cloud non attiva", "warning"); 
+            }
         }
 
         function salvaHotspotId() {
@@ -1425,7 +1460,7 @@
                     <button class="btn-qty" onclick="modificaQuantita(${idx}, 1)">+</button>
                 </div>
                 <div style="flex:1; cursor:pointer;" onclick="apriModaleVarianteDettagliata(${idx})" title="Clicca per personalizzare">
-                    <b>${i.nome} ${!i.inviato ? '<span style="color:var(--accent-amber); font-size:0.7rem;">(Nuovo)</span>' : ''}</b>
+                    <b>${i.nome} ${!i.inviato ? '<span style="color:var(--accent-amber); font-size:0.7rem;">(Nuovo)</span>' : '<span style="color:var(--accent-green); font-size:0.7rem;">(Inviato)</span>'}</b>
                     <div class="item-sub">${i.stampante === 'Bar' ? '☕ Bar' : '🍳 Cucina'} (Uscita ${i.uscita}) ⚙️</div>
                 </div>
                 <b>€ ${(i.prezzo * q).toFixed(2)}</b>`;
@@ -1973,34 +2008,30 @@
             showToast("Timer salvati!", 'success');
         }
 
+        /* --- STAMPA COMANDA DI PRODUZIONE AGGIORNATA (SOLO NUOVI ARTICOLI) --- */
         function stampaComandaPerReparto(repartoRichiesto) {
             if (ordineCorrente.length === 0) {
                 showToast("Nessun articolo nell'ordine!", "warning");
                 return;
             }
 
-            var articoliReparto = ordineCorrente.filter(i => {
-                if (repartoRichiesto === 'Bar') {
-                    return i.stampante === 'Bar' || i.uscita === 1;
-                } else {
-                    return i.stampante !== 'Bar' && i.uscita !== 1;
-                }
+            // Filtra rigorosamente SOLO gli articoli del reparto che NON sono ancora stati inviati
+            var articoliRepartoNuovi = ordineCorrente.filter(i => {
+                var appartieneAlBar = (i.stampante === 'Bar' || i.uscita === 1);
+                var matchReparto = (repartoRichiesto === 'Bar') ? appartieneAlBar : !appartieneAlBar;
+                return matchReparto && !i.inviato;
             });
 
-            if (articoliReparto.length === 0) {
-                showToast("Nessun articolo disponibile per il reparto " + repartoRichiesto, "warning");
+            if (articoliRepartoNuovi.length === 0) {
+                showToast("Nessun nuovo articolo da inviare per il reparto " + repartoRichiesto, "warning");
                 return;
             }
 
-            var haNuoviArticoli = articoliReparto.some(i => !i.inviato);
-            if (!haNuoviArticoli) {
-                showToast("Tutti gli articoli di " + repartoRichiesto + " sono già stati inviati!", "warning");
-                return;
-            }
-
+            // Marca come inviati solo i nuovi articoli appena stampati
             ordineCorrente.forEach(i => {
                 var appartieneAlBar = (i.stampante === 'Bar' || i.uscita === 1);
-                if ((repartoRichiesto === 'Bar' && appartieneAlBar) || (repartoRichiesto === 'Cucina' && !appartieneAlBar)) {
+                var matchReparto = (repartoRichiesto === 'Bar') ? appartieneAlBar : !appartieneAlBar;
+                if (matchReparto && !i.inviato) {
                     i.inviato = true;
                     i.statoKds = "In Attesa";
                 }
@@ -2038,13 +2069,13 @@
                 <div><b>${etichettaTav}</b> | Op: ${operatoreCorrente}</div>
             </div>`;
 
-            articoliReparto.forEach(i => {
+            articoliRepartoNuovi.forEach(i => {
                 var q = i.qta || 1;
                 html += `<div class="thermal-row"><span><b>${q}x</b> ${i.nome}</span><span>Uscita ${i.uscita || 1}</span></div>`;
             });
 
             html += `<div class="thermal-divider"></div>
-                     <div style="text-align:center; font-weight:bold; font-size:0.8rem;">*** STAMPA DI REPARTO INVIATA ***</div>`;
+                     <div style="text-align:center; font-weight:bold; font-size:0.8rem;">*** STAMPA DI REPARTO AGGIUNTIVA ***</div>`;
 
             document.getElementById('thermal-receipt-content').innerHTML = html;
             document.getElementById('modal-preview').style.display = 'flex';
